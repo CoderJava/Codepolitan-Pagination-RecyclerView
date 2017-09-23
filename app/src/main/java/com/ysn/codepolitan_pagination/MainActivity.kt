@@ -1,10 +1,10 @@
 package com.ysn.codepolitan_pagination
 
-import android.os.AsyncTask
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
@@ -12,8 +12,10 @@ import kotlin.properties.Delegates
 
 class MainActivity : AppCompatActivity() {
 
+    private val TAG = javaClass.simpleName
     lateinit var listData: ArrayList<String>
     lateinit var listViewType: ArrayList<Int>
+    var countLoadMore by Delegates.notNull<Int>()
     var isLoading by Delegates.notNull<Boolean>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -21,7 +23,10 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         isLoading = false
-        repeat(10) { a ->
+        listData = ArrayList()
+        listViewType = ArrayList()
+        countLoadMore = 0
+        repeat(30) { a ->
             listData.add(a.toString())
             listViewType.add(AdapterData.ITEM_VIEW_TYPE_CONTENT)
         }
@@ -35,14 +40,17 @@ class MainActivity : AppCompatActivity() {
         val linearLayoutManager = LinearLayoutManager(this)
         recycler_view_data_activity_main.layoutManager = linearLayoutManager
         recycler_view_data_activity_main.adapter = adapterData
+
         recycler_view_data_activity_main.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView?, dx: Int, dy: Int) {
                 val countItem = linearLayoutManager.itemCount
                 val lastVisiblePosition = linearLayoutManager.findLastCompletelyVisibleItemPosition()
                 val isLastPosition = countItem.minus(1) == lastVisiblePosition
-                if (!isLoading && isLastPosition) {
+                Log.d(TAG, "isLoading: $isLoading & isLastPosition: $isLastPosition & countLoadMore: $countLoadMore")
+                if (!isLoading && isLastPosition && countLoadMore < 3) {
                     isLoading = true
                     doAsync {
+                        val lenTemp = listData.size - 1
                         repeat(10) { a ->
                             val lastValue: Int = when (a) {
                                 0 -> {
@@ -53,9 +61,21 @@ class MainActivity : AppCompatActivity() {
                                 }
                             }
                             listData.add(lastValue.plus(1).toString())
+                            listViewType.add(AdapterData.ITEM_VIEW_TYPE_CONTENT)
                         }
-                        Thread.sleep(1000 * 5)
-                        // todo: do something in here
+                        Thread.sleep(1000 * 10)
+                        uiThread {
+                            listData.removeAt(lenTemp)
+                            listViewType.removeAt(lenTemp)
+
+                            if (countLoadMore + 1 < 3) {
+                                listData.add("")
+                                listViewType.add(AdapterData.ITEM_VIEW_TYPE_LOADING)
+                            }
+                            adapterData.refresh(listData, listViewType)
+                            countLoadMore += 1
+                            isLoading = false
+                        }
                     }
                 }
             }

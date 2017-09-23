@@ -1,6 +1,7 @@
 package com.ysn.codepolitan_pagination
 
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,8 +11,9 @@ import kotlinx.android.synthetic.main.item_data_content.view.*
  * Created by root on 21/09/17.
  */
 
-class AdapterData(private val listData: List<String>, private val listViewType: List<Int>) : RecyclerView.Adapter<AdapterData.ViewHolder>() {
+class AdapterData(private var listData: List<String>, private var listViewType: List<Int>) : RecyclerView.Adapter<AdapterData.ViewHolder>() {
 
+    private val TAG = javaClass.simpleName
     companion object {
         val ITEM_VIEW_TYPE_CONTENT = 1
         val ITEM_VIEW_TYPE_LOADING = 2
@@ -21,10 +23,10 @@ class AdapterData(private val listData: List<String>, private val listViewType: 
         val layoutInflater = LayoutInflater.from(parent?.context)
         return when (viewType) {
             ITEM_VIEW_TYPE_CONTENT -> ViewHolderContent(
-                    layoutInflater.inflate(R.layout.item_data_content, parent)
+                    layoutInflater.inflate(R.layout.item_data_content, null)
             )
             else -> ViewHolderLoading(
-                    layoutInflater.inflate(R.layout.item_data_loading, parent)
+                    layoutInflater.inflate(R.layout.item_data_loading, null)
             )
         }
     }
@@ -47,6 +49,13 @@ class AdapterData(private val listData: List<String>, private val listViewType: 
     override fun getItemCount(): Int = listData.size
 
     override fun getItemViewType(position: Int): Int = listViewType[position]
+
+    fun refresh(listData: ArrayList<String>, listViewType: ArrayList<Int>) {
+        Log.d(TAG, "refresh")
+        this.listData = listData
+        this.listViewType = listViewType
+        notifyDataSetChanged()
+    }
 
     open class ViewHolder(itemView: View?) : RecyclerView.ViewHolder(itemView)
 
